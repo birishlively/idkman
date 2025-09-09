@@ -3,73 +3,71 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Neon Snake</title>
+  <title>Neon Snake - Pink Pro</title>
   
-    # Neon Snake
-    A single-file browser game that demonstrates a clean game loop, input handling, collision, basic ECS-style composition, and thoughtful UX. Built with vanilla HTML/CSS/JS. No frameworks.
-
-    ## Highlights
-    - Responsive canvas with devicePixelRatio scaling
-    - Keyboard and touch controls
-    - Settings: speed, wrap walls, grid, high-contrast, reduced motion
-    - Pause, restart, and persistent high score
-    - ARIA live region announces score changes and game state
 
   <style>
     :root{
-      --bg:#0b0f14;           /* background */
-      --panel:#121822;         /* panel surface */
-      --ink:#e8f1ff;           /* text */
-      --ink-dim:#9fb3cc;       /* secondary text */
-      --ac:#62ffd5;            /* accent */
-      --ac2:#7aa2ff;           /* accent 2 */
-      --danger:#ff6b6b;        /* danger */
-      --grid:#203040;          /* grid color */
+      --bg:#0a0810;
+      --panel:#130f18;
+      --ink:#ffeaf7;
+      --ink-dim:#f2b8dd;
+      --ac:#ff51b8;     /* pink main best guy */
+      --ac2:#ff89d7;    /* pink first loser  */
+      --danger:#ff6b6b;
+      --grid:#2b1d2b;
+      --chip:#1c1420;
     }
     [data-contrast="high"]{
       --bg:#000;
-      --panel:#111;
+      --panel:#0f0f0f;
       --ink:#fff;
-      --ink-dim:#bbb;
-      --ac:#00ffb3;
-      --ac2:#33aaff;
-      --grid:#2a2a2a;
+      --ink-dim:#cfcfcf;
+      --ac:#ff3cae;
+      --ac2:#ff86d6;
+      --grid:#3a3a3a;
+      --chip:#161616;
     }
+
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
       margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      color:var(--ink); background: radial-gradient(1000px 700px at 10% -10%, #112136 0%, rgba(17,33,54,0) 60%), var(--bg);
+      color:var(--ink);
+      background: radial-gradient(900px 600px at 15% -10%, rgba(255,81,184,.18) 0%, rgba(255,81,184,0) 60%),
+                  radial-gradient(700px 500px at 100% 0%, rgba(255,137,215,.12) 0%, rgba(255,137,215,0) 55%),
+                  var(--bg);
       display:grid; place-items:center; padding:16px;
     }
+
     .app{display:grid; gap:16px; width:min(1100px,100%)}
     header{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px}
-    h1{font-size:clamp(20px,3vw,28px); margin:0; letter-spacing:.5px}
+    h1{font-size:clamp(20px,3vw,28px); margin:0; letter-spacing:.5px; color:var(--ac)}
     .meta{color:var(--ink-dim); font-size:14px}
-    .grid{display:grid; grid-template-columns: 1fr 300px; gap:16px}
+    .grid{display:grid; grid-template-columns: 1fr 320px; gap:16px}
     @media (max-width:900px){.grid{grid-template-columns:1fr}}
 
-    .panel{background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0)); border:1px solid rgba(255,255,255,0.08); border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.25);}
-    .stage-wrap{position:relative; aspect-ratio:1/1;}
+    .panel{background:linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0)); border:1px solid rgba(255,255,255,0.1); border-radius:16px; box-shadow:0 10px 30px rgba(255,81,184,.25)}
+    .stage-wrap{position:relative; aspect-ratio:1/1}
     canvas{width:100%; height:100%; display:block; border-radius:16px}
 
     .hud{position:absolute; inset:auto 12px 12px 12px; display:flex; align-items:center; justify-content:space-between; gap:8px; pointer-events:none}
-    .chip{pointer-events:auto; background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.12); color:var(--ink); padding:6px 10px; border-radius:999px; font-size:14px}
+    .chip{pointer-events:auto; background:var(--chip); border:1px solid rgba(255,255,255,.12); color:var(--ink); padding:6px 10px; border-radius:999px; font-size:14px}
 
     .controls{padding:14px}
-    .controls h2{margin:0 0 6px; font-size:16px}
-    .row{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px dashed rgba(255,255,255,.06)}
+    .controls h2{margin:0 0 6px; font-size:16px; color:var(--ac)}
+    .row{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px dashed rgba(255,255,255,.08)}
     .row:last-child{border-bottom:none}
     .row label{font-size:14px; color:var(--ink-dim)}
-    .row input[type="range"]{width:140px}
+    .row input[type="range"]{width:160px}
 
     .btns{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px}
     button{background:var(--panel); color:var(--ink); border:1px solid rgba(255,255,255,.12); padding:8px 12px; border-radius:10px; cursor:pointer}
     button:focus-visible{outline:2px solid var(--ac)}
-    .primary{background:linear-gradient(90deg, var(--ac2), var(--ac)); color:#081016; border:none; font-weight:600}
+    .primary{background:linear-gradient(90deg, var(--ac2), var(--ac)); color:#250b1c; border:none; font-weight:600}
 
     .status{padding:12px; color:var(--ink-dim); font-size:14px}
-    .kbd{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:12px; background:#0b1220; border:1px solid rgba(255,255,255,.12); padding:2px 6px; border-radius:6px; color:var(--ac)}
+    .kbd{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:12px; background:#120b16; border:1px solid rgba(255,255,255,.12); padding:2px 6px; border-radius:6px; color:var(--ac)}
 
     .touch{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px}
     .touch button{padding:16px 0}
@@ -79,7 +77,7 @@
     .gameover{position:absolute; inset:0; display:none; place-items:center; background:rgba(0,0,0,.45); border-radius:16px}
     .gameover.show{display:grid}
     .card{background:var(--panel); padding:20px; border:1px solid rgba(255,255,255,.12); border-radius:12px; text-align:center; max-width:320px}
-    .card h3{margin:0 0 6px}
+    .card h3{margin:0 0 6px; color:var(--ac)}
     .muted{color:var(--ink-dim)}
   </style>
 </head>
@@ -154,22 +152,29 @@
   </div>
 
   <script>
-    // Utility: RNG with seed so "New seed" changes food positions predictably
+    // Utility: PRNG with seed for reproducible food placement
     class RNG{constructor(seed=Date.now()){this.s=seed>>>0;} next(){let t=this.s+=0x6D2B79F5; t=Math.imul(t^t>>>15,t|1); t^=t+Math.imul(t^t>>>7,t|61); return ((t^t>>>14)>>>0)/4294967296;}}
 
-    // Game constants
+    // Canvas setup
     const canvas = document.getElementById('game');
     const ctx = canvas.getContext('2d');
-    const scale = window.devicePixelRatio || 1;
-    const CELL = 24;                 // cell size in CSS pixels
-    const GRID = Math.floor(canvas.width / CELL);
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+
+    function scaleCanvas(){
+      const r = canvas.getBoundingClientRect();
+      canvas.width = Math.floor(r.width * dpr);
+      canvas.height = Math.floor(r.height * dpr);
+    }
+
+    // Grid setup
+    const CELL = 24; // CSS px per cell for layout math
+    const GRID = Math.floor(canvas.width / CELL); // will be recalculated after scaling
 
     // State
     let state = {
-      tick:0,
       running:true,
       over:false,
-      speed:8,              // steps per second
+      speed:8,               // steps per second
       wrap:true,
       showGrid:true,
       contrast:false,
@@ -180,30 +185,46 @@
       nextDir:{x:1,y:0},
       snake:[{x:5,y:5}],
       food:{x:10,y:10},
-      rng: new RNG(),
+      rng: new RNG(parseInt(localStorage.getItem('neon.seed')||String(Date.now()))),
     };
 
-    // Scale canvas for crisp rendering
-    function scaleCanvas(){
-      const rect = canvas.getBoundingClientRect();
-      canvas.width = Math.floor(rect.width * scale);
-      canvas.height = Math.floor(rect.height * scale);
+    // Persisted settings
+    function saveSettings(){
+      localStorage.setItem('neon.wrap', state.wrap? '1':'0');
+      localStorage.setItem('neon.grid', state.showGrid? '1':'0');
+      localStorage.setItem('neon.contrast', state.contrast? '1':'0');
+      localStorage.setItem('neon.motion', state.reducedMotion? '1':'0');
+      localStorage.setItem('neon.speed', String(state.speed));
     }
-    scaleCanvas();
-    window.addEventListener('resize', scaleCanvas);
+    function loadSettings(){
+      state.wrap = localStorage.getItem('neon.wrap') !== '0';
+      state.showGrid = localStorage.getItem('neon.grid') !== '0';
+      state.contrast = localStorage.getItem('neon.contrast') === '1';
+      state.reducedMotion = localStorage.getItem('neon.motion') === '1';
+      const s = parseInt(localStorage.getItem('neon.speed')||'8');
+      if(!Number.isNaN(s)) state.speed = s;
+    }
 
     function announce(msg){
-      const el = document.getElementById('announce');
-      el.textContent = msg;
+      document.getElementById('announce').textContent = msg;
     }
 
-    // Helpers
+    // Grid helpers computed 4rm actual device pixels
+    function metrics(){
+      const cellW = canvas.width / Math.floor(canvas.clientWidth / CELL);
+      const cellH = canvas.height / Math.floor(canvas.clientHeight / CELL);
+      const cols = Math.floor(canvas.width / cellW);
+      const rows = Math.floor(canvas.height / cellH);
+      return {cellW, cellH, cols, rows};
+    }
+
     function rndInt(n){ return Math.floor(state.rng.next()*n); }
     function placeFood(){
-      let pos; let collision=true; let attempts=0;
-      while(collision && attempts<1000){
-        pos = {x:rndInt(GRID), y:rndInt(GRID)}; attempts++;
-        collision = state.snake.some(s=>s.x===pos.x && s.y===pos.y);
+      const m = metrics();
+      let pos, coll=true, tries=0;
+      while(coll && tries<1024){
+        pos = {x:rndInt(m.cols), y:rndInt(m.rows)}; tries++;
+        coll = state.snake.some(s=> s.x===pos.x && s.y===pos.y);
       }
       state.food = pos; announce('Food placed');
     }
@@ -216,17 +237,15 @@
       document.getElementById('overlay').classList.remove('show');
     }
 
-    // Input
-    const keyMap = { ArrowUp:{x:0,y:-1}, ArrowDown:{x:0,y:1}, ArrowLeft:{x:-1,y:0}, ArrowRight:{x:1,y:0},
-                      w:{x:0,y:-1}, s:{x:0,y:1}, a:{x:-1,y:0}, d:{x:1,y:0} };
+    // Input maps
+    const keyMap = { ArrowUp:{x:0,y:-1}, ArrowDown:{x:0,y:1}, ArrowLeft:{x:-1,y:0}, ArrowRight:{x:1,y:0}, w:{x:0,y:-1}, s:{x:0,y:1}, a:{x:-1,y:0}, d:{x:1,y:0} };
     window.addEventListener('keydown',(e)=>{
       if(e.code==='Space'){ togglePause(); e.preventDefault(); return; }
-      const k = e.key; if(!keyMap[k]) return; const nd = keyMap[k];
-      // prevent 180 turn
+      const nd = keyMap[e.key]; if(!nd) return;
       if(-nd.x!==state.dir.x || -nd.y!==state.dir.y){ state.nextDir = nd; }
     });
 
-    // Touch buttons
+    // Touchy buttons
     [['up','ArrowUp'],['down','ArrowDown'],['left','ArrowLeft'],['right','ArrowRight']].forEach(([id,key])=>{
       document.getElementById(id).addEventListener('click',()=>{
         const evt = new KeyboardEvent('keydown',{key});
@@ -234,32 +253,43 @@
       });
     });
 
-    // Controls
+    // Controls wiring
     const speed = document.getElementById('speed');
     const wrap = document.getElementById('wrap');
     const grid = document.getElementById('grid');
     const contrast = document.getElementById('contrast');
     const motion = document.getElementById('motion');
 
-    speed.addEventListener('input',()=> state.speed = +speed.value);
-    wrap.addEventListener('change',()=> state.wrap = wrap.checked);
-    grid.addEventListener('change',()=> state.showGrid = grid.checked);
+    function syncControls(){
+      speed.value = String(state.speed);
+      wrap.checked = state.wrap;
+      grid.checked = state.showGrid;
+      contrast.checked = state.contrast;
+      motion.checked = state.reducedMotion;
+      document.querySelector('.app').setAttribute('data-contrast', state.contrast?'high':'normal');
+    }
+
+    speed.addEventListener('input',()=>{ state.speed = +speed.value; saveSettings(); });
+    wrap.addEventListener('change',()=>{ state.wrap = wrap.checked; saveSettings(); });
+    grid.addEventListener('change',()=>{ state.showGrid = grid.checked; saveSettings(); });
     contrast.addEventListener('change',()=>{
-      state.contrast = contrast.checked;
+      state.contrast = contrast.checked; saveSettings();
       document.querySelector('.app').setAttribute('data-contrast', state.contrast?'high':'normal');
     });
-    motion.addEventListener('change',()=> state.reducedMotion = motion.checked);
+    motion.addEventListener('change',()=>{ state.reducedMotion = motion.checked; saveSettings(); });
 
     document.getElementById('pause').addEventListener('click', togglePause);
     document.getElementById('btnReset').addEventListener('click',()=>{
       localStorage.removeItem('neon.high'); state.high=0; document.getElementById('high').textContent='0';
     });
-    document.getElementById('btnNewSeed').addEventListener('click',()=>{ state.rng = new RNG(); placeFood(); });
+    document.getElementById('btnNewSeed').addEventListener('click',()=>{
+      const seed = Date.now(); localStorage.setItem('neon.seed', String(seed)); state.rng=new RNG(seed); placeFood();
+    });
     document.getElementById('restart').addEventListener('click', reset);
 
-    function togglePause(){ state.running = !state.running; announce(state.running?'Resumed':'Paused'); }
+    function togglePause(){ state.running = !state.running; announce(state.running? 'Resumed':'Paused'); }
 
-    // Core update
+    // Game loop with fixed timestep
     let acc = 0; let last = performance.now();
     function loop(now){
       const dt = (now - last)/1000; last = now; acc += dt;
@@ -273,13 +303,14 @@
 
     function update(){
       state.dir = state.nextDir;
+      const m = metrics();
       const head = {...state.snake[0]};
       head.x += state.dir.x; head.y += state.dir.y;
 
       if(state.wrap){
-        head.x = (head.x + GRID) % GRID; head.y = (head.y + GRID) % GRID;
+        head.x = (head.x + m.cols) % m.cols; head.y = (head.y + m.rows) % m.rows;
       } else {
-        if(head.x<0 || head.y<0 || head.x>=GRID || head.y>=GRID){ return gameOver(); }
+        if(head.x<0 || head.y<0 || head.x>=m.cols || head.y>=m.rows){ return gameOver(); }
       }
 
       if(state.snake.some((s,i)=> i && s.x===head.x && s.y===head.y)) return gameOver();
@@ -301,53 +332,51 @@
       document.getElementById('overlay').classList.add('show');
     }
 
-    // Render
     function render(){
-      // scale to device pixels
-      const w = canvas.width, h = canvas.height;
-      ctx.clearRect(0,0,w,h);
+      const w = canvas.width, h = canvas.height; ctx.clearRect(0,0,w,h);
+      const m = metrics();
 
       if(state.showGrid){
         ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--grid');
-        ctx.lineWidth = 1 * scale;
+        ctx.lineWidth = 1 * dpr;
         ctx.beginPath();
-        for(let i=0;i<=GRID;i++){
-          const x = i * (w/GRID); const y = i * (h/GRID);
+        for(let i=0;i<=m.cols;i++){
+          const x = i * (w/m.cols); const y = i * (h/m.rows);
           ctx.moveTo(x,0); ctx.lineTo(x,h);
           ctx.moveTo(0,y); ctx.lineTo(w,y);
         }
         ctx.stroke();
       }
 
-      // food glow
       const ac = getComputedStyle(document.documentElement).getPropertyValue('--ac').trim();
       const ac2 = getComputedStyle(document.documentElement).getPropertyValue('--ac2').trim();
-      const cellW = w/GRID, cellH = h/GRID;
 
-      function rectCell(x,y,pad=2){
-        const px = x*cellW + pad*scale; const py = y*cellH + pad*scale;
-        ctx.fillRect(px, py, cellW - pad*2*scale, cellH - pad*2*scale);
+      function rectCell(x,y,pad=2,color=ac){
+        const px = x*(w/m.cols) + pad*dpr; const py = y*(h/m.rows) + pad*dpr;
+        ctx.fillStyle = color;
+        ctx.fillRect(px, py, (w/m.cols) - pad*2*dpr, (h/m.rows) - pad*2*dpr);
       }
 
-      // Food
-      ctx.fillStyle = ac2; rectCell(state.food.x, state.food.y, 4);
+      // Food glow
+      rectCell(state.food.x, state.food.y, 4, ac2);
 
-      // Snake body
-      const t = state.reducedMotion ? 0 : (Date.now()%1000)/1000;
+      // Snake
       for(let i=0;i<state.snake.length;i++){
         const seg = state.snake[i];
-        const hueMix = i===0 ? ac : ac2;
-        ctx.fillStyle = hueMix;
-        rectCell(seg.x, seg.y, i===0?1:3);
+        rectCell(seg.x, seg.y, i===0?1:3, i===0?ac:ac2);
         if(!state.reducedMotion && i===0){
-          ctx.globalAlpha=.25; ctx.fillStyle=hueMix; rectCell(seg.x, seg.y, 0); ctx.globalAlpha=1;
+          ctx.globalAlpha=.25; rectCell(seg.x, seg.y, 0, ac); ctx.globalAlpha=1;
         }
       }
     }
 
     // Boot
-    placeFood();
+    loadSettings();
+    scaleCanvas();
+    window.addEventListener('resize', scaleCanvas);
     document.getElementById('high').textContent = state.high;
+    syncControls();
+    placeFood();
     requestAnimationFrame(loop);
   </script>
 </body>
