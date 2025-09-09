@@ -1,63 +1,354 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Neon Snake</title>
-<!--
-Neon Snake — single-file portfolio project
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Neon Snake</title>
+  
+    # Neon Snake
+    A single-file browser game that demonstrates a clean game loop, input handling, collision, basic ECS-style composition, and thoughtful UX. Built with vanilla HTML/CSS/JS. No frameworks.
 
+    ## Highlights
+    - Responsive canvas with devicePixelRatio scaling
+    - Keyboard and touch controls
+    - Settings: speed, wrap walls, grid, high-contrast, reduced motion
+    - Pause, restart, and persistent high score
+    - ARIA live region announces score changes and game state
 
-## Highlights
-- Responsive canvas with devicePixelRatio scaling
-- Keyboard and touch controls
-- Settings: speed, wrap walls, grid, high-contrast, reduced motion
-- Pause, restart, and persistent high score
-- ARIA live region announces score changes and game state
+  <style>
+    :root{
+      --bg:#0b0f14;           /* background */
+      --panel:#121822;         /* panel surface */
+      --ink:#e8f1ff;           /* text */
+      --ink-dim:#9fb3cc;       /* secondary text */
+      --ac:#62ffd5;            /* accent */
+      --ac2:#7aa2ff;           /* accent 2 */
+      --danger:#ff6b6b;        /* danger */
+      --grid:#203040;          /* grid color */
+    }
+    [data-contrast="high"]{
+      --bg:#000;
+      --panel:#111;
+      --ink:#fff;
+      --ink-dim:#bbb;
+      --ac:#00ffb3;
+      --ac2:#33aaff;
+      --grid:#2a2a2a;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      color:var(--ink); background: radial-gradient(1000px 700px at 10% -10%, #112136 0%, rgba(17,33,54,0) 60%), var(--bg);
+      display:grid; place-items:center; padding:16px;
+    }
+    .app{display:grid; gap:16px; width:min(1100px,100%)}
+    header{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px}
+    h1{font-size:clamp(20px,3vw,28px); margin:0; letter-spacing:.5px}
+    .meta{color:var(--ink-dim); font-size:14px}
+    .grid{display:grid; grid-template-columns: 1fr 300px; gap:16px}
+    @media (max-width:900px){.grid{grid-template-columns:1fr}}
 
+    .panel{background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0)); border:1px solid rgba(255,255,255,0.08); border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.25);}
+    .stage-wrap{position:relative; aspect-ratio:1/1;}
+    canvas{width:100%; height:100%; display:block; border-radius:16px}
 
-<style>
-:root{
---bg:#0b0f14; /* background */
---panel:#121822; /* panel surface */
---ink:#e8f1ff; /* text */
---ink-dim:#9fb3cc; /* secondary text */
---ac:#62ffd5; /* accent */
---ac2:#7aa2ff; /* accent 2 */
---danger:#ff6b6b; /* danger */
---grid:#203040; /* grid color */
-}
-[data-contrast="high"]{
---bg:#000;
---panel:#111;
---ink:#fff;
---ink-dim:#bbb;
---ac:#00ffb3;
---ac2:#33aaff;
---grid:#2a2a2a;
-}
-*{box-sizing:border-box}
-html,body{height:100%}
-body{
-margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
-color:var(--ink); background: radial-gradient(1000px 700px at 10% -10%, #112136 0%, rgba(17,33,54,0) 60%), var(--bg);
-display:grid; place-items:center; padding:16px;
-}
-.app{display:grid; gap:16px; width:min(1100px,100%)}
-header{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px}
-h1{font-size:clamp(20px,3vw,28px); margin:0; letter-spacing:.5px}
-.meta{color:var(--ink-dim); font-size:14px}
-.grid{display:grid; grid-template-columns: 1fr 300px; gap:16px}
-@media (max-width:900px){.grid{grid-template-columns:1fr}}
+    .hud{position:absolute; inset:auto 12px 12px 12px; display:flex; align-items:center; justify-content:space-between; gap:8px; pointer-events:none}
+    .chip{pointer-events:auto; background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.12); color:var(--ink); padding:6px 10px; border-radius:999px; font-size:14px}
 
+    .controls{padding:14px}
+    .controls h2{margin:0 0 6px; font-size:16px}
+    .row{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; border-bottom:1px dashed rgba(255,255,255,.06)}
+    .row:last-child{border-bottom:none}
+    .row label{font-size:14px; color:var(--ink-dim)}
+    .row input[type="range"]{width:140px}
 
-.panel{background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0)); border:1px solid rgba(255,255,255,0.08); border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.25);}
-.stage-wrap{position:relative; aspect-ratio:1/1;}
-canvas{width:100%; height:100%; display:block; border-radius:16px}
+    .btns{display:flex; flex-wrap:wrap; gap:8px; margin-top:10px}
+    button{background:var(--panel); color:var(--ink); border:1px solid rgba(255,255,255,.12); padding:8px 12px; border-radius:10px; cursor:pointer}
+    button:focus-visible{outline:2px solid var(--ac)}
+    .primary{background:linear-gradient(90deg, var(--ac2), var(--ac)); color:#081016; border:none; font-weight:600}
 
+    .status{padding:12px; color:var(--ink-dim); font-size:14px}
+    .kbd{font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size:12px; background:#0b1220; border:1px solid rgba(255,255,255,.12); padding:2px 6px; border-radius:6px; color:var(--ac)}
 
-.hud{position:absolute; inset:auto 12px 12px 12px; display:flex; align-items:center; justify-content:space-between; gap:8px; pointer-events:none}
-.chip{pointer-events:auto; background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.12); color:var(--ink); padding:6px 10px; border-radius:999px; font-size:14px}
+    .touch{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px}
+    .touch button{padding:16px 0}
 
+    .badge{position:absolute; top:10px; left:10px; background:rgba(0,0,0,.45); border:1px solid rgba(255,255,255,.15); padding:6px 10px; border-radius:999px; font-size:12px; color:var(--ink-dim)}
 
+    .gameover{position:absolute; inset:0; display:none; place-items:center; background:rgba(0,0,0,.45); border-radius:16px}
+    .gameover.show{display:grid}
+    .card{background:var(--panel); padding:20px; border:1px solid rgba(255,255,255,.12); border-radius:12px; text-align:center; max-width:320px}
+    .card h3{margin:0 0 6px}
+    .muted{color:var(--ink-dim)}
+  </style>
+</head>
+<body>
+  <div class="app" data-contrast="normal">
+    <header>
+      <h1>Neon Snake</h1>
+      <div class="meta">WASD or arrows to move, <span class="kbd">Space</span> to pause</div>
+    </header>
+
+    <div class="grid">
+      <section class="panel stage-wrap">
+        <canvas id="game" width="600" height="600" aria-label="Snake game area" role="img"></canvas>
+        <div class="badge" id="announce" aria-live="polite"></div>
+        <div class="hud">
+          <span class="chip">Score: <strong id="score">0</strong></span>
+          <span class="chip">High: <strong id="high">0</strong></span>
+          <button id="pause" class="chip">Pause</button>
+        </div>
+        <div id="overlay" class="gameover">
+          <div class="card">
+            <h3>Game Over</h3>
+            <p class="muted">Score <span id="finalScore">0</span> • High <span id="finalHigh">0</span></p>
+            <div class="btns"><button id="restart" class="primary">Restart</button></div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="panel controls" aria-label="Settings">
+        <h2>Settings</h2>
+        <div class="row">
+          <label for="speed">Speed</label>
+          <input id="speed" type="range" min="4" max="14" step="1" value="8" />
+        </div>
+        <div class="row">
+          <label for="wrap">Wrap walls</label>
+          <input id="wrap" type="checkbox" checked />
+        </div>
+        <div class="row">
+          <label for="grid">Show grid</label>
+          <input id="grid" type="checkbox" checked />
+        </div>
+        <div class="row">
+          <label for="contrast">High contrast</label>
+          <input id="contrast" type="checkbox" />
+        </div>
+        <div class="row">
+          <label for="motion">Reduced motion</label>
+          <input id="motion" type="checkbox" />
+        </div>
+        <div class="btns">
+          <button id="btnReset">Reset high score</button>
+          <button id="btnNewSeed">New seed</button>
+        </div>
+
+        <div class="status">
+          <div>Touch controls</div>
+          <div class="touch" aria-hidden="false">
+            <button id="up">Up</button>
+            <button id="right">Right</button>
+            <button id="down">Down</button>
+            <button id="left" style="grid-column:1">Left</button>
+          </div>
+        </div>
+
+        <div class="status">
+          <div>Tech stack</div>
+          <div class="muted">Vanilla HTML, CSS, JS • Canvas • LocalStorage • ARIA</div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    // Utility: RNG with seed so "New seed" changes food positions predictably
+    class RNG{constructor(seed=Date.now()){this.s=seed>>>0;} next(){let t=this.s+=0x6D2B79F5; t=Math.imul(t^t>>>15,t|1); t^=t+Math.imul(t^t>>>7,t|61); return ((t^t>>>14)>>>0)/4294967296;}}
+
+    // Game constants
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const scale = window.devicePixelRatio || 1;
+    const CELL = 24;                 // cell size in CSS pixels
+    const GRID = Math.floor(canvas.width / CELL);
+
+    // State
+    let state = {
+      tick:0,
+      running:true,
+      over:false,
+      speed:8,              // steps per second
+      wrap:true,
+      showGrid:true,
+      contrast:false,
+      reducedMotion:false,
+      score:0,
+      high: parseInt(localStorage.getItem('neon.high')||'0'),
+      dir:{x:1,y:0},
+      nextDir:{x:1,y:0},
+      snake:[{x:5,y:5}],
+      food:{x:10,y:10},
+      rng: new RNG(),
+    };
+
+    // Scale canvas for crisp rendering
+    function scaleCanvas(){
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = Math.floor(rect.width * scale);
+      canvas.height = Math.floor(rect.height * scale);
+    }
+    scaleCanvas();
+    window.addEventListener('resize', scaleCanvas);
+
+    function announce(msg){
+      const el = document.getElementById('announce');
+      el.textContent = msg;
+    }
+
+    // Helpers
+    function rndInt(n){ return Math.floor(state.rng.next()*n); }
+    function placeFood(){
+      let pos; let collision=true; let attempts=0;
+      while(collision && attempts<1000){
+        pos = {x:rndInt(GRID), y:rndInt(GRID)}; attempts++;
+        collision = state.snake.some(s=>s.x===pos.x && s.y===pos.y);
+      }
+      state.food = pos; announce('Food placed');
+    }
+
+    function reset(){
+      state.over=false; state.running=true; state.score=0;
+      state.dir={x:1,y:0}; state.nextDir={x:1,y:0};
+      state.snake=[{x:5,y:5}]; placeFood();
+      document.getElementById('score').textContent = state.score;
+      document.getElementById('overlay').classList.remove('show');
+    }
+
+    // Input
+    const keyMap = { ArrowUp:{x:0,y:-1}, ArrowDown:{x:0,y:1}, ArrowLeft:{x:-1,y:0}, ArrowRight:{x:1,y:0},
+                      w:{x:0,y:-1}, s:{x:0,y:1}, a:{x:-1,y:0}, d:{x:1,y:0} };
+    window.addEventListener('keydown',(e)=>{
+      if(e.code==='Space'){ togglePause(); e.preventDefault(); return; }
+      const k = e.key; if(!keyMap[k]) return; const nd = keyMap[k];
+      // prevent 180 turn
+      if(-nd.x!==state.dir.x || -nd.y!==state.dir.y){ state.nextDir = nd; }
+    });
+
+    // Touch buttons
+    [['up','ArrowUp'],['down','ArrowDown'],['left','ArrowLeft'],['right','ArrowRight']].forEach(([id,key])=>{
+      document.getElementById(id).addEventListener('click',()=>{
+        const evt = new KeyboardEvent('keydown',{key});
+        window.dispatchEvent(evt);
+      });
+    });
+
+    // Controls
+    const speed = document.getElementById('speed');
+    const wrap = document.getElementById('wrap');
+    const grid = document.getElementById('grid');
+    const contrast = document.getElementById('contrast');
+    const motion = document.getElementById('motion');
+
+    speed.addEventListener('input',()=> state.speed = +speed.value);
+    wrap.addEventListener('change',()=> state.wrap = wrap.checked);
+    grid.addEventListener('change',()=> state.showGrid = grid.checked);
+    contrast.addEventListener('change',()=>{
+      state.contrast = contrast.checked;
+      document.querySelector('.app').setAttribute('data-contrast', state.contrast?'high':'normal');
+    });
+    motion.addEventListener('change',()=> state.reducedMotion = motion.checked);
+
+    document.getElementById('pause').addEventListener('click', togglePause);
+    document.getElementById('btnReset').addEventListener('click',()=>{
+      localStorage.removeItem('neon.high'); state.high=0; document.getElementById('high').textContent='0';
+    });
+    document.getElementById('btnNewSeed').addEventListener('click',()=>{ state.rng = new RNG(); placeFood(); });
+    document.getElementById('restart').addEventListener('click', reset);
+
+    function togglePause(){ state.running = !state.running; announce(state.running?'Resumed':'Paused'); }
+
+    // Core update
+    let acc = 0; let last = performance.now();
+    function loop(now){
+      const dt = (now - last)/1000; last = now; acc += dt;
+      const step = 1/Math.max(1, state.speed);
+      if(state.running && !state.over){
+        while(acc >= step){ update(); acc -= step; }
+      }
+      render();
+      requestAnimationFrame(loop);
+    }
+
+    function update(){
+      state.dir = state.nextDir;
+      const head = {...state.snake[0]};
+      head.x += state.dir.x; head.y += state.dir.y;
+
+      if(state.wrap){
+        head.x = (head.x + GRID) % GRID; head.y = (head.y + GRID) % GRID;
+      } else {
+        if(head.x<0 || head.y<0 || head.x>=GRID || head.y>=GRID){ return gameOver(); }
+      }
+
+      if(state.snake.some((s,i)=> i && s.x===head.x && s.y===head.y)) return gameOver();
+
+      state.snake.unshift(head);
+      if(head.x===state.food.x && head.y===state.food.y){
+        state.score++; document.getElementById('score').textContent = state.score; announce('Score '+state.score);
+        if(state.score>state.high){ state.high=state.score; localStorage.setItem('neon.high', String(state.high)); document.getElementById('high').textContent = state.high; }
+        placeFood();
+      } else {
+        state.snake.pop();
+      }
+    }
+
+    function gameOver(){
+      state.over=true; state.running=false; announce('Game over');
+      document.getElementById('finalScore').textContent = state.score;
+      document.getElementById('finalHigh').textContent = state.high;
+      document.getElementById('overlay').classList.add('show');
+    }
+
+    // Render
+    function render(){
+      // scale to device pixels
+      const w = canvas.width, h = canvas.height;
+      ctx.clearRect(0,0,w,h);
+
+      if(state.showGrid){
+        ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--grid');
+        ctx.lineWidth = 1 * scale;
+        ctx.beginPath();
+        for(let i=0;i<=GRID;i++){
+          const x = i * (w/GRID); const y = i * (h/GRID);
+          ctx.moveTo(x,0); ctx.lineTo(x,h);
+          ctx.moveTo(0,y); ctx.lineTo(w,y);
+        }
+        ctx.stroke();
+      }
+
+      // food glow
+      const ac = getComputedStyle(document.documentElement).getPropertyValue('--ac').trim();
+      const ac2 = getComputedStyle(document.documentElement).getPropertyValue('--ac2').trim();
+      const cellW = w/GRID, cellH = h/GRID;
+
+      function rectCell(x,y,pad=2){
+        const px = x*cellW + pad*scale; const py = y*cellH + pad*scale;
+        ctx.fillRect(px, py, cellW - pad*2*scale, cellH - pad*2*scale);
+      }
+
+      // Food
+      ctx.fillStyle = ac2; rectCell(state.food.x, state.food.y, 4);
+
+      // Snake body
+      const t = state.reducedMotion ? 0 : (Date.now()%1000)/1000;
+      for(let i=0;i<state.snake.length;i++){
+        const seg = state.snake[i];
+        const hueMix = i===0 ? ac : ac2;
+        ctx.fillStyle = hueMix;
+        rectCell(seg.x, seg.y, i===0?1:3);
+        if(!state.reducedMotion && i===0){
+          ctx.globalAlpha=.25; ctx.fillStyle=hueMix; rectCell(seg.x, seg.y, 0); ctx.globalAlpha=1;
+        }
+      }
+    }
+
+    // Boot
+    placeFood();
+    document.getElementById('high').textContent = state.high;
+    requestAnimationFrame(loop);
+  </script>
+</body>
 </html>
