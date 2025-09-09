@@ -1,11 +1,63 @@
+<!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>bullshit</title>
-</head>
-<body>
-    <p> bullshit </p>
-    <h1> ffuuck this </h1>
-</body>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Neon Snake</title>
+<!--
+Neon Snake — single-file portfolio project
+
+
+## Highlights
+- Responsive canvas with devicePixelRatio scaling
+- Keyboard and touch controls
+- Settings: speed, wrap walls, grid, high-contrast, reduced motion
+- Pause, restart, and persistent high score
+- ARIA live region announces score changes and game state
+
+
+<style>
+:root{
+--bg:#0b0f14; /* background */
+--panel:#121822; /* panel surface */
+--ink:#e8f1ff; /* text */
+--ink-dim:#9fb3cc; /* secondary text */
+--ac:#62ffd5; /* accent */
+--ac2:#7aa2ff; /* accent 2 */
+--danger:#ff6b6b; /* danger */
+--grid:#203040; /* grid color */
+}
+[data-contrast="high"]{
+--bg:#000;
+--panel:#111;
+--ink:#fff;
+--ink-dim:#bbb;
+--ac:#00ffb3;
+--ac2:#33aaff;
+--grid:#2a2a2a;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+color:var(--ink); background: radial-gradient(1000px 700px at 10% -10%, #112136 0%, rgba(17,33,54,0) 60%), var(--bg);
+display:grid; place-items:center; padding:16px;
+}
+.app{display:grid; gap:16px; width:min(1100px,100%)}
+header{display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px}
+h1{font-size:clamp(20px,3vw,28px); margin:0; letter-spacing:.5px}
+.meta{color:var(--ink-dim); font-size:14px}
+.grid{display:grid; grid-template-columns: 1fr 300px; gap:16px}
+@media (max-width:900px){.grid{grid-template-columns:1fr}}
+
+
+.panel{background:linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0)); border:1px solid rgba(255,255,255,0.08); border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,.25);}
+.stage-wrap{position:relative; aspect-ratio:1/1;}
+canvas{width:100%; height:100%; display:block; border-radius:16px}
+
+
+.hud{position:absolute; inset:auto 12px 12px 12px; display:flex; align-items:center; justify-content:space-between; gap:8px; pointer-events:none}
+.chip{pointer-events:auto; background:rgba(0,0,0,.35); border:1px solid rgba(255,255,255,.12); color:var(--ink); padding:6px 10px; border-radius:999px; font-size:14px}
+
+
 </html>
